@@ -14,7 +14,7 @@
 | trường | ý nghĩa |
 |---|---|
 | title, doi, year, venue, url, cites | thông tin thư mục |
-| abstract | tóm tắt, tối đa 600 ký tự |
+| abstract | một câu tóm tắt tự viết (tiếng Anh, ≤200 ký tự), không chép nguyên văn |
 | reaction | HER, OER, ORR, CO2RR, NRR, HOR, OWS, other |
 | electrolyte | acidic, alkaline, neutral hoặc null |
 | material, mclass, synth | vật liệu, nhóm vật liệu, phương pháp tổng hợp |

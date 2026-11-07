@@ -28,7 +28,7 @@ def now(): return datetime.datetime.now(datetime.timezone.utc).replace(microseco
 def clean_paper(p):
     if not isinstance(p, dict) or not str(p.get("title", "")).strip(): return None
     q = {"title": str(p["title"]).strip()[:400], "doi": norm_doi(p.get("doi")), "year": p.get("year"), "venue": (p.get("venue") or None),
-         "url": p.get("url") or None, "abstract": str(p.get("abstract") or "")[:600], "cites": p.get("cites"),
+         "url": p.get("url") or None, "abstract": str(p.get("abstract") or "")[:300], "cites": p.get("cites"),
          "reaction": p.get("reaction") if p.get("reaction") in RX else "other", "electrolyte": p.get("electrolyte") if p.get("electrolyte") in ("acidic", "alkaline", "neutral") else None,
          "material": (str(p.get("material") or "")[:120] or None), "mclass": (str(p.get("mclass") or "")[:60] or None), "synth": (str(p.get("synth") or "")[:80] or None),
          "src": p.get("src") or "SciSpace", "added": p.get("added") or now()}

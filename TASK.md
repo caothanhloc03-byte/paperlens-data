@@ -2,7 +2,7 @@
 
 Bạn (Claude) chạy tác vụ này mỗi ngày trong một phiên mới. Mục tiêu: bổ sung bài báo điện hóa mới (kèm số liệu do AI trích từ tóm tắt) và, mỗi Chủ nhật, các tiêu chí chấm chung vào `paperlens_pack.json`. Web PaperLens bản trên máy tự tải file này để chấm bài **không cần AI**.
 
-Quy tắc an toàn: chỉ ghi thông tin công khai của bài đã đăng (tiêu đề, DOI, năm, tạp chí, tóm tắt ≤600 ký tự, số liệu trong tóm tắt). Không ghi gì về bản thảo của người dùng. Không sửa file nào ngoài `paperlens_pack.json`, `log/` và các file tạm.
+Quy tắc an toàn: chỉ ghi thông tin công khai của bài đã đăng (tiêu đề, DOI, năm, tạp chí, link, số liệu nêu trong tóm tắt). Trường `abstract` là **một câu tóm tắt tự viết bằng lời của bạn, tiếng Anh, ≤200 ký tự**, không chép nguyên văn abstract của bài (bản quyền). Không ghi gì về bản thảo của người dùng. Không sửa file nào ngoài `paperlens_pack.json`, `log/` và các file tạm.
 
 ## 1. Tìm bài mới (khoảng 20–60 bài/ngày)
 Dùng công cụ `search` của SciSpace. Chạy 8 truy vấn, mỗi truy vấn tối đa 15 kết quả, lọc năm hiện tại (thêm `year:<năm nay>` vào truy vấn):
@@ -21,7 +21,7 @@ Nếu SciSpace lỗi, dùng WebFetch tới OpenAlex (không cần khóa):
 Bỏ bài đã có trong `paperlens_pack.json` (so DOI, hoặc tiêu đề khi không có DOI).
 
 ## 2. Trích số liệu (chỉ từ tóm tắt, không suy đoán)
-Với mỗi bài, tạo một mục theo `SCHEMA.md`: `reaction` (HER/OER/ORR/CO2RR/NRR/HOR/OWS/other), `electrolyte` (acidic/alkaline/neutral), `material`, `mclass` (phosphide, sulfide, oxide, hydroxide, alloy, single-atom, carbide, nitride, MOF-derived, other), `synth`, và các số `eta10` (mV ở 10 mA cm⁻²), `eta100`, `tafel` (mV dec⁻¹), `stab_h`, `stab_j`, `cell_v`, `h2_usd_kg`. Giá trị nào tóm tắt không nêu thì để `null`. Ghi `src` là nguồn tìm thấy.
+Với mỗi bài, tạo một mục theo `SCHEMA.md`: `reaction` (HER/OER/ORR/CO2RR/NRR/HOR/OWS/other), `electrolyte` (acidic/alkaline/neutral), `material`, `mclass` (phosphide, sulfide, oxide, hydroxide, alloy, single-atom, carbide, nitride, MOF-derived, other), `synth`, và các số `eta10` (mV ở 10 mA cm⁻²), `eta100`, `tafel` (mV dec⁻¹), `stab_h`, `stab_j`, `cell_v`, `h2_usd_kg`. Giá trị nào tóm tắt không nêu thì để `null`. Chỉ ghi `eta10` khi bài nói rõ ở 10 mA cm⁻²; quá thế không nêu mật độ dòng thì bỏ trống. Với bài OWS (cả HER và OER) chỉ ghi `cell_v`, không ghi `eta10`. Ghi `src` là nguồn tìm thấy.
 Lưu thành `tmp/new_papers.json` (một mảng JSON).
 
 ## 3. Mỗi Chủ nhật: tiêu chí chấm chung
