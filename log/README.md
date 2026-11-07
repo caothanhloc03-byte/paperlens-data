@@ -1,0 +1,2 @@
+# Nhật ký cập nhật
+
