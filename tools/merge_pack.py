@@ -70,6 +70,36 @@ def clean_rule(r):
     return {"id": rid if str(rid).startswith("G") else "G" + str(rid), "field": r.get("field") if r.get("field") in ("HER", "OER", "GEN") else "HER", "sub": sub, "text": text[:400],
             "basis": str(r.get("basis") or "")[:300], "chk": r.get("chk"), "status": "proposed", "n": int(r.get("n") or 1), "date": r.get("date") or now()}
 
+def clean_exemplar(e):
+    if not isinstance(e, dict) or not e.get("id") or not e.get("title") or not isinstance(e.get("subs"), dict): return None
+    subs = {}
+    for k, v in e["subs"].items():
+        try:
+            sc, mx = v
+            if mx and sc is not None and 0 <= float(sc) <= float(mx) + 1e-6: subs[str(k)] = [round(float(sc), 2), float(mx)]
+            elif mx: subs[str(k)] = [None, float(mx)]
+        except (TypeError, ValueError): pass
+    if len(subs) < 20: return None
+    return {"id": str(e["id"]), "doi": norm_doi(e.get("doi")), "title": str(e["title"])[:300], "journal": e.get("journal"), "if": e.get("if"), "year": e.get("year"),
+            "url": e.get("url"), "license": e.get("license"), "kind": e.get("kind") if e.get("kind") in ("material", "method") else "material", "field": e.get("field") if e.get("field") in ("HER", "OER", "GEN") else "GEN", "reaction": e.get("reaction"),
+            "electrolyte": e.get("electrolyte"), "material": (str(e.get("material") or "")[:120] or None), "mclass": e.get("mclass"), "summary": str(e.get("summary") or "")[:300],
+            "score": e.get("score"), "scored": e.get("scored"), "verdict": e.get("verdict"), "gates": e.get("gates"), "perf": e.get("perf") or {},
+            "fig_n": e.get("fig_n"), "fig_issues": [str(x)[:160] for x in (e.get("fig_issues") or [])][:12], "subs": subs, "date": e.get("date") or now()}
+
+def ex_stats(ex):
+    out = {}
+    for f in ("HER", "OER", "GEN"):
+        es = [e for e in ex if e["field"] == f and e.get("kind", "material") == "material"]
+        if not es: continue
+        d = {}
+        for e in es:
+            for k, (sc, mx) in e["subs"].items():
+                if sc is not None and mx: d.setdefault(k, []).append(sc / mx)
+        st = {k: {"n": len(v), "p25": round(sorted(v)[int(.25 * (len(v) - 1) + .5)], 3), "median": round(statistics.median(v), 3), "p75": round(sorted(v)[int(.75 * (len(v) - 1) + .5)], 3)} for k, v in d.items()}
+        tot = [e["score"] / e["scored"] * 100 for e in es if e.get("score") is not None and e.get("scored")]
+        out[f] = {"n": len(es), "subs": st, "pct": {"median": round(statistics.median(tot), 1), "p25": round(sorted(tot)[int(.25 * (len(tot) - 1) + .5)], 1), "p75": round(sorted(tot)[int(.75 * (len(tot) - 1) + .5)], 1)} if tot else None}
+    return out
+
 def quant(v):
     v = sorted(v)
     if not v: return None
@@ -93,7 +123,7 @@ def bench(papers):
     return res
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--papers"); ap.add_argument("--rules"); ap.add_argument("--confirm"); a = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument("--papers"); ap.add_argument("--rules"); ap.add_argument("--confirm"); ap.add_argument("--exemplars"); a = ap.parse_args()
     pk = json.load(open(PACK, encoding="utf-8")) if os.path.exists(PACK) else {"version": 1, "papers": [], "rules": []}
     P = {key(p): p for p in pk.get("papers", [])}; added = upd = 0
     if a.papers:
@@ -108,6 +138,20 @@ def main():
                     if v not in (None, "") and o.get(f) in (None, ""): o[f] = v; ch = True
                 upd += ch
             else: P[k] = p; added += 1
+    # bài mẫu (tạp chí IF 16–20, chấm đủ 12 tiêu chí bằng PaperLens + AI, có chấm hình)
+    E = {e["id"]: e for e in pk.get("exemplars", [])}; ne = 0
+    if a.exemplars:
+        for raw in json.load(open(a.exemplars, encoding="utf-8")):
+            e = clean_exemplar(raw)
+            if not e or e["id"] in E: continue
+            E[e["id"]] = e; ne += 1
+            pp = clean_paper({"title": e["title"], "doi": e.get("doi"), "year": e.get("year"), "venue": e.get("journal"), "url": e.get("url"), "abstract": e.get("summary", ""),
+                              "reaction": e.get("reaction") or e.get("field"), "electrolyte": e.get("electrolyte"), "material": e.get("material"), "mclass": e.get("mclass"),
+                              "eta10": (e.get("perf") or {}).get("eta10"), "tafel": (e.get("perf") or {}).get("tafel"), "stab_h": (e.get("perf") or {}).get("stab"),
+                              "cell_v": (e.get("perf") or {}).get("cell"), "src": "Bài mẫu IF 16–20"})
+            if pp and key(pp) not in P: P[key(pp)] = pp; added += 1
+    pk["exemplars"] = sorted(E.values(), key=lambda e: e.get("date", ""), reverse=True)
+    pk["exemplar_stats"] = ex_stats(pk["exemplars"])
     papers = sorted(P.values(), key=lambda p: p.get("added", ""), reverse=True)[:MAX_PAPERS]
     R = {r["id"]: r for r in pk.get("rules", [])}; seen = {re.sub(r"\W+", " ", r["text"].lower()).strip() for r in R.values()}; nr = 0
     if a.rules:
@@ -124,6 +168,6 @@ def main():
     pk.update({"version": 1, "updated": now(), "papers": papers, "rules": sorted(R.values(), key=lambda r: (r["sub"], r["id"])), "bench": bench(papers),
                "note": "PaperLens data pack. Public literature metadata and general review criteria only; no manuscripts."})
     json.dump(pk, open(PACK, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-    print(json.dumps({"papers_total": len(papers), "papers_added": added, "papers_updated": upd, "rules_total": len(R), "rules_added": nr, "rules_confirmed": nc}, ensure_ascii=False))
+    print(json.dumps({"exemplars_total": len(pk["exemplars"]), "exemplars_added": ne, "papers_total": len(papers), "papers_added": added, "papers_updated": upd, "rules_total": len(R), "rules_added": nr, "rules_confirmed": nc}, ensure_ascii=False))
 
 if __name__ == "__main__": main()
