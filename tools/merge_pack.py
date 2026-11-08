@@ -66,7 +66,7 @@ def clean_rule(r):
     if len(text) < 15 or not re.match(r"^\d{1,2}\.[0-9A-Z]{1,2}$", sub): return None
     if any(t not in OKF for t in LEAK.findall(text)): return None  # công thức vật liệu cụ thể → bỏ
     if not chk_ok(r.get("chk")): r["chk"] = None
-    rid = r.get("id") or "G" + hashlib.sha1((sub + "|" + text.lower()).encode()).hexdigest()[:10]
+    rid = r.get("id") or "G" + hashlib.sha1(((r.get("field") or "HER") + "|" + sub + "|" + text.lower()).encode()).hexdigest()[:10]
     return {"id": rid if str(rid).startswith("G") else "G" + str(rid), "field": r.get("field") if r.get("field") in ("HER", "OER", "GEN") else "HER", "sub": sub, "text": text[:400],
             "basis": str(r.get("basis") or "")[:300], "chk": r.get("chk"), "status": "proposed", "n": int(r.get("n") or 1), "date": r.get("date") or now()}
 
@@ -153,12 +153,12 @@ def main():
     pk["exemplars"] = sorted(E.values(), key=lambda e: e.get("date", ""), reverse=True)
     pk["exemplar_stats"] = ex_stats(pk["exemplars"])
     papers = sorted(P.values(), key=lambda p: p.get("added", ""), reverse=True)[:MAX_PAPERS]
-    R = {r["id"]: r for r in pk.get("rules", [])}; seen = {re.sub(r"\W+", " ", r["text"].lower()).strip() for r in R.values()}; nr = 0
+    R = {r["id"]: r for r in pk.get("rules", [])}; seen = {r.get("field", "HER") + ":" + re.sub(r"\W+", " ", r["text"].lower()).strip() for r in R.values()}; nr = 0
     if a.rules:
         for raw in json.load(open(a.rules, encoding="utf-8")):
             r = clean_rule(raw)
             if not r: continue
-            t = re.sub(r"\W+", " ", r["text"].lower()).strip()
+            t = r["field"] + ":" + re.sub(r"\W+", " ", r["text"].lower()).strip()
             if r["id"] in R or t in seen: continue
             R[r["id"]] = r; seen.add(t); nr += 1
     nc = 0
