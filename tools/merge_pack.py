@@ -12,7 +12,7 @@ PACK = os.path.join(ROOT, "paperlens_pack.json")
 MAX_PAPERS = 8000
 RX = {"HER", "OER", "ORR", "CO2RR", "NRR", "HOR", "OWS", "other"}
 VAL_KEYS = {"eta10": (0, 1500), "eta100": (0, 2000), "tafel": (5, 400), "stab_h": (0, 20000), "stab_j": (0, 5000), "cell_v": (1.0, 3.0), "h2_usd_kg": (0.3, 30)}
-CHK_T = {"text", "val", "flag", "and", "or"}
+CHK_T = {"text", "val", "flag", "and", "or", "not"}
 SECS = {"abs", "intro", "methods", "results", "disc", "concl", "all"}
 VKEYS = {"eta10", "etaHigh", "tafel", "cdl", "stab", "cycles", "cell", "fe"}
 FKEYS = {"ir", "rhe", "refel", "compTable", "bench", "highJ", "electrolyte"}
@@ -45,7 +45,7 @@ def chk_ok(c, d=0):
     if c is None: return True
     if not isinstance(c, dict) or d > 4 or c.get("t") not in CHK_T: return False
     t = c["t"]
-    if t in ("and", "or"): return isinstance(c.get("of"), list) and len(c["of"]) > 0 and all(chk_ok(x, d + 1) for x in c["of"])
+    if t in ("and", "or", "not"): return isinstance(c.get("of"), list) and len(c["of"]) > 0 and all(chk_ok(x, d + 1) for x in c["of"])
     if t == "text":
         if c.get("sec", "all") not in SECS: return False
         pats = list(c.get("any") or []) + list(c.get("all") or [])

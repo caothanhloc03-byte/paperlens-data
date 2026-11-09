@@ -36,5 +36,6 @@ Mục con hay dùng: 2.x Abstract · 3.1 nêu khoảng trống · 3.6 khoảng t
 {"t":"val","key":"eta10|etaHigh|tafel|cdl|stab|cycles|cell|fe","op":">=|<=|present","v":số}
 {"t":"flag","key":"ir|rhe|refel|compTable|bench|highJ|electrolyte"}
 {"t":"and"|"or","of":[…]}
+{"t":"not","of":[…]}   (đảo kết quả phép kiểm đầu tiên; dùng cho tiêu chí có điều kiện: "nếu bài làm X thì phải có Y" → or(not(X), Y), để bài không làm X vẫn đạt)
 ```
 Regex kiểu JavaScript, không phân biệt hoa thường, viết bằng tiếng Anh như trong bài báo. Đơn vị: eta mV; tafel mV dec⁻¹; cdl mF cm⁻²; stab giờ; cell V; fe %.
